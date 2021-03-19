@@ -164,7 +164,10 @@ class _EvaluateVisitor
   List<CssMediaQuery>? _mediaQueries;
 
   /// The current parent node in the output CSS tree.
-  late ModifiableCssParentNode _parent;
+  ModifiableCssParentNode get _parent => _assertInModule(__parent, "__parent");
+  set _parent(ModifiableCssParentNode value) => __parent = value;
+
+  ModifiableCssParentNode? __parent;
 
   /// The name of the current declaration parent.
   String? _declarationName;
@@ -242,14 +245,20 @@ class _EvaluateVisitor
   AsyncImporter? _importer;
 
   /// The stylesheet that's currently being evaluated.
-  late Stylesheet _stylesheet;
+  Stylesheet get _stylesheet => _assertInModule(__stylesheet, "_stylesheet");
+  set _stylesheet(Stylesheet value) => __stylesheet = value;
+  Stylesheet? __stylesheet;
 
   /// The root stylesheet node.
-  late ModifiableCssStylesheet _root;
+  ModifiableCssStylesheet get _root => _assertInModule(__root, "_root");
+  set _root(ModifiableCssStylesheet value) => __root = value;
+  ModifiableCssStylesheet? __root;
 
   /// The first index in [_root.children] after the initial block of CSS
   /// imports.
-  late int _endOfImports;
+  int get _endOfImports => _assertInModule(__endOfImports, "_endOfImports");
+  set _endOfImports(int value) => __endOfImports = value;
+  int? __endOfImports;
 
   /// Plain-CSS imports that didn't appear in the initial block of CSS imports.
   ///
@@ -258,11 +267,14 @@ class _EvaluateVisitor
   ///
   /// This is `null` unless there are any out-of-order imports in the current
   /// stylesheet.
-  late List<ModifiableCssImport>? _outOfOrderImports;
+  List<ModifiableCssImport>? _outOfOrderImports;
 
   /// The extension store that tracks extensions and style rules for the current
   /// module.
-  late ExtensionStore _extensionStore;
+  ExtensionStore get _extensionStore =>
+      _assertInModule(__extensionStore, "_extensionStore");
+  set _extensionStore(ExtensionStore value) => __extensionStore = value;
+  ExtensionStore? __extensionStore;
 
   /// The configuration for the current module.
   ///
@@ -513,6 +525,16 @@ class _EvaluateVisitor
         callback);
   }
 
+  /// Asserts that [value] is not `null` and returns it.
+  ///
+  /// This is used for fields that are set whenever the evaluator is evaluating
+  /// a module, which is to say essentially all the time (unless running via
+  /// [runExpression] or [runStatement]).
+  T _assertInModule<T>(T? value, String name) {
+    if (value != null) return value;
+    throw StateError("Can't access $name outside of a module.");
+  }
+
   /// Runs [callback] with [importer] as [_importer] and a fake [_stylesheet]
   /// with [nodeWithSpan]'s source span.
   Future<T> _withFakeStylesheet<T>(AsyncImporter? importer,
@@ -659,12 +681,12 @@ class _EvaluateVisitor
     var extensionStore = ExtensionStore();
     await _withEnvironment(environment, () async {
       var oldImporter = _importer;
-      var oldStylesheet = _stylesheet;
-      var oldRoot = _root;
-      var oldParent = _parent;
-      var oldEndOfImports = _endOfImports;
+      var oldStylesheet = __stylesheet;
+      var oldRoot = __root;
+      var oldParent = __parent;
+      var oldEndOfImports = __endOfImports;
       var oldOutOfOrderImports = _outOfOrderImports;
-      var oldExtensionStore = _extensionStore;
+      var oldExtensionStore = __extensionStore;
       var oldStyleRule = _styleRule;
       var oldMediaQueries = _mediaQueries;
       var oldDeclarationName = _declarationName;
@@ -674,7 +696,7 @@ class _EvaluateVisitor
       var oldConfiguration = _configuration;
       _importer = importer;
       _stylesheet = stylesheet;
-      var root = _root = ModifiableCssStylesheet(stylesheet.span);
+      var root = __root = ModifiableCssStylesheet(stylesheet.span);
       _parent = root;
       _endOfImports = 0;
       _outOfOrderImports = null;
@@ -693,12 +715,12 @@ class _EvaluateVisitor
           : CssStylesheet(_addOutOfOrderImports(), stylesheet.span);
 
       _importer = oldImporter;
-      _stylesheet = oldStylesheet;
-      _root = oldRoot;
-      _parent = oldParent;
-      _endOfImports = oldEndOfImports;
+      __stylesheet = oldStylesheet;
+      __root = oldRoot;
+      __parent = oldParent;
+      __endOfImports = oldEndOfImports;
       _outOfOrderImports = oldOutOfOrderImports;
-      _extensionStore = oldExtensionStore;
+      __extensionStore = oldExtensionStore;
       _styleRuleIgnoringAtRoot = oldStyleRule;
       _mediaQueries = oldMediaQueries;
       _declarationName = oldDeclarationName;
